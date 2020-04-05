@@ -8,6 +8,10 @@ NUM_EPOCHS = 20
 
 
 def main():
+  # prepare the dataset
+  train_ds = lfw.read_dataset()
+  print(train_ds)
+  train_ds = train_ds.batch(BATCH_SIZE, drop_remainder=True).repeat()
 
   with tf.device('/gpu:0'):
     # prepare the model
@@ -15,11 +19,6 @@ def main():
       shape=IMAGE_SHAPE,
       num_classes=lfw.NUM_CLASSES
     )
-
-    # prepare the dataset
-    train_ds = lfw.read_dataset()
-    print(train_ds)
-    train_ds = train_ds.batch(BATCH_SIZE, drop_remainder=True).repeat()
 
     # train the model
     m.fit(
