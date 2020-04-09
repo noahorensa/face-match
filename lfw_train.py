@@ -27,7 +27,7 @@ def main():
       train_ds,
       epochs=NUM_EPOCHS,
       steps_per_epoch=STEPS_PER_EPOCH,
-      verbose=1
+      verbose=2
     )
 
 

@@ -1,5 +1,4 @@
 import os
-
 import tensorflow as tf
 import vggface2
 import model

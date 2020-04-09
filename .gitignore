@@ -210,3 +210,5 @@ fabric.properties
 *.ckpt*
 *.csv
 checkpoint
+backup/
+temp_training_states/
