@@ -1,16 +1,17 @@
 import tensorflow as tf
-import lfw
+import vggface2
 import model
 
-IMAGE_SHAPE = (72, 72, 3)
-BATCH_SIZE = 32
+DATASET_PATH = "/path/to/dataset"
+IMAGE_SHAPE = (96, 96, 3)
+BATCH_SIZE = 64
 NUM_EPOCHS = 20
-STEPS_PER_EPOCH = int(lfw.NUM_EXAMPLES / BATCH_SIZE)
+STEPS_PER_EPOCH = int(vggface2.NUM_EXAMPLES / BATCH_SIZE)
 
 
 def main():
   # prepare the dataset
-  train_ds = lfw.read_dataset()
+  train_ds = vggface2.preprocess_dataset(DATASET_PATH)
   print(train_ds)
   train_ds = train_ds.batch(BATCH_SIZE, drop_remainder=True).repeat()
 
@@ -18,7 +19,7 @@ def main():
     # prepare the model
     m = model.create_model(
       shape=IMAGE_SHAPE,
-      num_classes=lfw.NUM_CLASSES
+      num_classes=vggface2.NUM_CLASSES
     )
 
     # train the model
