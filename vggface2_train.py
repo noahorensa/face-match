@@ -2,7 +2,7 @@ import tensorflow as tf
 import vggface2
 import model
 
-DATASET_PATH = "/media/noah/Noah/VGGFace2/test"
+DATASET_PATH = "/path/to/dataset"
 IMAGE_SHAPE = (96, 96, 3)
 BATCH_SIZE = 10
 NUM_EPOCHS = 20
