@@ -4,7 +4,7 @@ import tensorflow_datasets as tfds
 NUM_EXAMPLES = 13233
 NUM_CLASSES = 5749
 
-def preprocess_dataset(image_size=(72, 72)):
+def preprocess_dataset(image_size=(96, 96)):
   train_ds = tfds.load(name="lfw", split=tfds.Split.TRAIN)
 
   labels = train_ds.map(lambda example: example['label'])
@@ -29,11 +29,14 @@ def preprocess_dataset(image_size=(72, 72)):
 
   @tf.function
   def tf_format_example(example):
-    return tf.py_function(
+    image, label = tf.py_function(
       format_example,
       [example['image'], example['label']],
       [tf.float32, tf.uint64]
     )
+    image.set_shape((image_size[0], image_size[1], 3))
+    label.set_shape((1))
+    return image, label
 
   train_ds = train_ds.map(tf_format_example, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
