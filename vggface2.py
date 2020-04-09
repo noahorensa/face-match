@@ -1,22 +1,22 @@
 import tensorflow as tf
+import tensorflow_datasets as tfds
 import os
 
 NUM_EXAMPLES = 3141890
 NUM_CLASSES = 8631
 
 def preprocess_dataset(path, image_size=(96, 96)):
-  label_dict = {}
-  label_id = 0
+  unique_labels = []
   for root, dirs, files in os.walk(path):
-    for d in dirs:
-      label_dict[bytes(d, 'utf-8')] = label_id
-      label_id += 1
+    unique_labels = dirs
 
   def get_label(file_path):
     # convert the path to a list of path components
     parts = tf.strings.split(file_path, os.path.sep)
     # The second to last is the class-directory
     return parts[-2]
+
+  encoder = tfds.features.text.TokenTextEncoder(unique_labels)
 
   def decode_img(img):
     # convert the compressed string to a 3D uint8 tensor
@@ -31,12 +31,19 @@ def preprocess_dataset(path, image_size=(96, 96)):
     img = tf.io.read_file(file_path)
     img = decode_img(img)
     # get label
-    label = tf.py_function(lambda l: label_dict[l.numpy()], [get_label(file_path)], tf.uint64)
-    label.set_shape(tf.TensorShape(()))
+    label = encoder.encode(get_label(file_path))
     return img, label
 
+  @tf.function
+  def tf_process_path(path):
+    return tf.py_function(
+      process_path,
+      path,
+      [tf.float32, tf.uint64]
+    )
+
   ds = tf.data.Dataset.list_files(path + "/*/*.jpg")
-  ds = ds.map(process_path)
+  ds = ds.map(tf_process_path, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
   return ds
 
