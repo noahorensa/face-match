@@ -6,6 +6,8 @@ NUM_EXAMPLES = 3141890
 NUM_CLASSES = 8631
 
 def preprocess_dataset(path, image_size=(96, 96)):
+  print("Listing directories in ", path)
+
   unique_labels = []
   for root, dirs, files in os.walk(path):
     unique_labels = dirs
@@ -31,18 +33,44 @@ def preprocess_dataset(path, image_size=(96, 96)):
     img = tf.io.read_file(file_path)
     img = decode_img(img)
     # get label
-    label = encoder.encode(get_label(file_path))
+    label = encoder.encode(get_label(file_path).numpy())
     return img, label
 
   @tf.function
   def tf_process_path(path):
-    return tf.py_function(
+    image, label = tf.py_function(
       process_path,
-      path,
+      [path],
       [tf.float32, tf.uint64]
     )
+    image.set_shape((image_size[0], image_size[1], 3))
+    label.set_shape((1))
+    return image, label
 
-  ds = tf.data.Dataset.list_files(path + "/*/*.jpg")
+  try:
+    print("Reading vggface.lst")
+
+    f = open("vggface2.lst")
+    files = []
+    for x in f.readlines():
+      files.append(x[0:-1])
+    ds = tf.data.Dataset.from_tensor_slices(tf.convert_to_tensor(files, dtype=tf.string))
+
+  except FileNotFoundError:
+    print("vggface2.lst not found. Listing jpg files in", path)
+
+    ds = tf.data.Dataset.list_files(path + "/*/*.jpg").shuffle(1000)
+
+    print("Writing vggface.lst")
+    f = open("vggface2.lst", "w")
+    for i in ds:
+      f.write(str(i.numpy().decode('UTF-8')) + '\n')
+
+  finally:
+    f.close()
+
+  print("Preparing dataset")
+
   ds = ds.map(tf_process_path, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
   return ds
