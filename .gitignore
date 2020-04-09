@@ -205,3 +205,8 @@ fabric.properties
 
 # cached file paths
 *.lst
+
+# files saved during training
+*.ckpt*
+*.csv
+checkpoint

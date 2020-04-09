@@ -5,7 +5,7 @@ import model
 DATASET_PATH = "/path/to/dataset"
 IMAGE_SHAPE = (96, 96, 3)
 BATCH_SIZE = 10
-NUM_EPOCHS = 20
+NUM_EPOCHS = 10
 STEPS_PER_EPOCH = int(vggface2.NUM_EXAMPLES / BATCH_SIZE)
 
 
@@ -14,6 +14,14 @@ def main():
   train_ds = vggface2.preprocess_dataset(DATASET_PATH)
   print(train_ds)
   train_ds = train_ds.batch(BATCH_SIZE, drop_remainder=True).repeat()
+
+  ckpt_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath="vggface2.ckpt", save_weights_only=True, verbose=1
+  )
+
+  csv_callback = tf.keras.callbacks.CSVLogger(
+    "vggface2.csv", separator=',', append=False
+  )
 
   with tf.device('/cpu:0'):
     # prepare the model
@@ -27,7 +35,8 @@ def main():
       train_ds,
       epochs=NUM_EPOCHS,
       steps_per_epoch=STEPS_PER_EPOCH,
-      verbose=1
+      callbacks=[ckpt_callback, csv_callback],
+      verbose=2
     )
 
 

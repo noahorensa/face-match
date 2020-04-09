@@ -48,9 +48,9 @@ def preprocess_dataset(path, image_size=(96, 96)):
     return image, label
 
   try:
-    print("Reading vggface.lst")
-
     f = open("vggface2.lst")
+
+    print("Reading vggface2.lst")
     files = []
     for x in f.readlines():
       files.append(x[0:-1])
