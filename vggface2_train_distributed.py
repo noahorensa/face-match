@@ -10,7 +10,7 @@ NUM_WORKERS = len(WORKERS)
 
 DATASET_PATH = "/path/to/dataset"
 IMAGE_SHAPE = (96, 96, 3)
-BATCH_SIZE = 10
+BATCH_SIZE = 64
 GLOBAL_BATCH_SIZE = BATCH_SIZE * NUM_WORKERS
 NUM_EPOCHS = 10
 STEPS_PER_EPOCH = int(vggface2.NUM_EXAMPLES / BATCH_SIZE)
@@ -29,7 +29,7 @@ def main():
   train_ds = train_ds\
     .with_options(options)\
     .shard(NUM_WORKERS, WORKER_INDEX)\
-    .batch(GLOBAL_BATCH_SIZE, drop_remainder=True)\
+    .batch(BATCH_SIZE, drop_remainder=True)\
     .repeat()
 
   with dist_strategy.scope():
