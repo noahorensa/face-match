@@ -59,6 +59,8 @@ def main():
 
 
 if __name__ == "__main__":
+  os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
   os.environ['TF_CONFIG'] = json.dumps({
