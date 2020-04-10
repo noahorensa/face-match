@@ -1,0 +1,5 @@
+WORKERS = ["discus-spark1:12345", "discus-spark2:12345", "discus-spark3:12345", "discus-spark4:12345", "discus-spark5:12345", "discus-spark6:12345", "discus-spark7:12345", "discus-spark8:12345", "discus-spark9:12345"]
+WORKER_INDEX = 0
+NUM_WORKERS = len(WORKERS)
+
+DATASET_PATH = "/trux/data/VGGFace2/train"

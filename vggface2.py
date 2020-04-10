@@ -10,7 +10,8 @@ def preprocess_dataset(path, image_size=(96, 96)):
 
   unique_labels = []
   for root, dirs, files in os.walk(path):
-    unique_labels = dirs
+    for d in dirs:
+      unique_labels.append(tf.strings.split(d, os.path.sep)[-1])
 
   def get_label(file_path):
     # convert the path to a list of path components
