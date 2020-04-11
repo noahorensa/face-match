@@ -13,11 +13,10 @@ WORKER_INDEX = int(hostname[0].decode('UTF-8')[-2]) - 1
 NUM_WORKERS = len(WORKERS)
 
 DATASET_PATH = "/trux/data/VGGFace2/train"
-IMAGE_SHAPE = (96, 96, 3)
-BATCH_SIZE = 64
+IMAGE_SHAPE = (130, 130, 3)
+BATCH_SIZE = 32
 GLOBAL_BATCH_SIZE = BATCH_SIZE * NUM_WORKERS
 NUM_EPOCHS = 10
-STEPS_PER_EPOCH = int(vggface2.NUM_EXAMPLES / GLOBAL_BATCH_SIZE)
 
 print("WORKER =", hostname)
 print("WORKER_INDEX =", WORKER_INDEX)
@@ -34,13 +33,16 @@ def main():
   options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
 
   # prepare the dataset
-  train_ds = vggface2.preprocess_dataset(DATASET_PATH)
+  num_examples, train_ds = vggface2.preprocess_dataset(DATASET_PATH, IMAGE_SHAPE)
   print(train_ds)
+  print('Dataset preparation complete. NUM_EXAMPLES =', num_examples)
   train_ds = train_ds\
     .with_options(options)\
     .shard(NUM_WORKERS, WORKER_INDEX)\
     .batch(GLOBAL_BATCH_SIZE, drop_remainder=True)\
     .repeat()
+
+  STEPS_PER_EPOCH = int(num_examples / GLOBAL_BATCH_SIZE)
 
   with dist_strategy.scope():
     ckpt_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -55,7 +57,7 @@ def main():
       # prepare the model
       m = model.create_model(
         shape=IMAGE_SHAPE,
-        num_classes=vggface2.NUM_CLASSES + 1
+        num_classes=vggface2.NUM_CLASSES
       )
 
       # train the model
@@ -70,9 +72,7 @@ def main():
 
 if __name__ == "__main__":
   os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-
   os.environ['TF_CONFIG'] = json.dumps({
     'cluster': {
       'worker': WORKERS

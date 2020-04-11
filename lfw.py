@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 NUM_EXAMPLES = 13233
-NUM_CLASSES = 5749
+NUM_CLASSES = 5749 + 1
 
 def preprocess_dataset(image_size=(96, 96)):
   train_ds = tfds.load(name="lfw", split=tfds.Split.TRAIN)
@@ -22,9 +22,10 @@ def preprocess_dataset(image_size=(96, 96)):
   encoder = tfds.features.text.TokenTextEncoder(unique_labels)
 
   def format_example(image, label):
+    image = tf.image.resize_with_pad(image, image_size[0], image_size[1])
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-    image = tf.image.resize(image, image_size)
     label = encoder.encode(label.numpy())
+    label = tf.one_hot(label, NUM_CLASSES)
     return image, label
 
   @tf.function
@@ -32,10 +33,10 @@ def preprocess_dataset(image_size=(96, 96)):
     image, label = tf.py_function(
       format_example,
       [example['image'], example['label']],
-      [tf.float32, tf.uint64]
+      [tf.float32, tf.float32]
     )
     image.set_shape((image_size[0], image_size[1], 3))
-    label.set_shape((1))
+    label.set_shape((1, NUM_CLASSES))
     return image, label
 
   train_ds = train_ds.map(tf_format_example, num_parallel_calls=tf.data.experimental.AUTOTUNE)

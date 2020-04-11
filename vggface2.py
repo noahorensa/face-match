@@ -3,15 +3,24 @@ import tensorflow_datasets as tfds
 import os
 
 NUM_EXAMPLES = 3141890
-NUM_CLASSES = 8631
+NUM_CLASSES = 1000 + 1
+# NUM_CLASSES = 8631 + 1
 
-def preprocess_dataset(path, image_size=(96, 96)):
+def preprocess_dataset(path, image_size=(96, 96, 3)):
   print("Listing directories in ", path)
 
+  label_dict = {}
   unique_labels = []
+  label_id = 0
+
   for root, dirs, files in os.walk(path):
     for d in dirs:
-      unique_labels.append(tf.strings.split(d, os.path.sep)[-1].numpy())
+      l = tf.strings.split(d, os.path.sep)[-1].numpy()
+      label_dict[l] = label_id
+      unique_labels.append(l)
+      label_id += 1
+      if (len(unique_labels) == NUM_CLASSES - 1):
+        break
 
   def get_label(file_path):
     # convert the path to a list of path components
@@ -21,20 +30,17 @@ def preprocess_dataset(path, image_size=(96, 96)):
 
   encoder = tfds.features.text.TokenTextEncoder(unique_labels)
 
-  def decode_img(img):
-    # convert the compressed string to a 3D uint8 tensor
-    img = tf.image.decode_jpeg(img, channels=3)
-    # Use `convert_image_dtype` to convert to floats in the [0,1] range.
-    img = tf.image.convert_image_dtype(img, tf.float32)
-    # resize the image to the desired size.
-    return tf.image.resize(img, image_size)
-
   def process_path(file_path):
     # load the raw data from the file as a string
     img = tf.io.read_file(file_path)
-    img = decode_img(img)
+    img = tf.image.decode_jpeg(img, channels=3)
+    # resize the image to the desired size.
+    img = tf.image.resize_with_pad(img, image_size[0], image_size[1])
+    # Use `convert_image_dtype` to convert to floats in the [0,1] range.
+    img = tf.image.convert_image_dtype(img, tf.float32)
     # get label
     label = encoder.encode(get_label(file_path).numpy())
+    label = tf.one_hot(label, NUM_CLASSES)
     return img, label
 
   @tf.function
@@ -42,10 +48,10 @@ def preprocess_dataset(path, image_size=(96, 96)):
     image, label = tf.py_function(
       process_path,
       [path],
-      [tf.float32, tf.uint64]
+      [tf.float32, tf.float32]
     )
     image.set_shape((image_size[0], image_size[1], 3))
-    label.set_shape((1))
+    label.set_shape((1, NUM_CLASSES))
     return image, label
 
   try:
@@ -65,16 +71,22 @@ def preprocess_dataset(path, image_size=(96, 96)):
     print("Writing vggface.lst")
     f = open("vggface2.lst", "w")
     for i in ds:
-      f.write(str(i.numpy().decode('UTF-8')) + '\n')
+      f.write(i.numpy().decode('UTF-8') + '\n')
 
   finally:
     f.close()
 
-  print("Preparing dataset")
+  print("Preparing dataset...")
 
+  ds = ds.filter(lambda p: tf.py_function(
+    lambda path: tf.strings.split(path, os.path.sep)[-2].numpy() in label_dict,
+    [p],
+    tf.bool
+  ))
+  ds_len = len(list(ds))
   ds = ds.map(tf_process_path, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-  return ds
+  return ds_len, ds
 
 
 def write_dataset(ds, filename="vggface2.tfrecord"):

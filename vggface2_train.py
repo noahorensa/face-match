@@ -4,17 +4,19 @@ import vggface2
 import model
 
 DATASET_PATH = "/path/to/dataset"
-IMAGE_SHAPE = (96, 96, 3)
-BATCH_SIZE = 10
+IMAGE_SHAPE = (130, 130, 3)
+BATCH_SIZE = 8
 NUM_EPOCHS = 10
-STEPS_PER_EPOCH = int(vggface2.NUM_EXAMPLES / BATCH_SIZE)
 
 
 def main():
   # prepare the dataset
-  train_ds = vggface2.preprocess_dataset(DATASET_PATH)
+  num_examples, train_ds = vggface2.preprocess_dataset(DATASET_PATH, IMAGE_SHAPE)
   print(train_ds)
+  print('Dataset preparation complete. NUM_EXAMPLES =', num_examples)
   train_ds = train_ds.batch(BATCH_SIZE, drop_remainder=True).repeat()
+
+  STEPS_PER_EPOCH = int(num_examples / BATCH_SIZE)
 
   ckpt_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath="vggface2.ckpt", save_weights_only=True, verbose=1
@@ -37,10 +39,11 @@ def main():
       epochs=NUM_EPOCHS,
       steps_per_epoch=STEPS_PER_EPOCH,
       callbacks=[ckpt_callback, csv_callback],
-      verbose=2
+      verbose=1
     )
 
 
 if __name__ == "__main__":
+  os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
   main()

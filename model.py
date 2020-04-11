@@ -56,7 +56,7 @@ def create_model(
   and compile the model
   """
   sgd_opt = keras.optimizers.SGD(lr=learn_rate, momentum=momentum)
-  cce_loss = keras.losses.sparse_categorical_crossentropy
+  cce_loss = keras.losses.categorical_crossentropy
 
   model.compile(optimizer=sgd_opt, loss=cce_loss, metrics=['accuracy'])
   return model

@@ -3,7 +3,7 @@ import tensorflow as tf
 import lfw
 import model
 
-IMAGE_SHAPE = (96, 96, 3)
+IMAGE_SHAPE = (130, 130, 3)
 BATCH_SIZE = 32
 NUM_EPOCHS = 20
 STEPS_PER_EPOCH = int(lfw.NUM_EXAMPLES / BATCH_SIZE)
@@ -11,7 +11,7 @@ STEPS_PER_EPOCH = int(lfw.NUM_EXAMPLES / BATCH_SIZE)
 
 def main():
   # prepare the dataset
-  train_ds = lfw.preprocess_dataset()
+  train_ds = lfw.preprocess_dataset((130, 130))
   print(train_ds)
   train_ds = train_ds.batch(BATCH_SIZE, drop_remainder=True).repeat()
 
@@ -27,7 +27,7 @@ def main():
       train_ds,
       epochs=NUM_EPOCHS,
       steps_per_epoch=STEPS_PER_EPOCH,
-      verbose=2
+      verbose=1
     )
 
 
