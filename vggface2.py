@@ -16,7 +16,7 @@ def preprocess_dataset(path, image_size=(96, 96, 3)):
   for root, dirs, files in os.walk(path):
     for d in dirs:
       l = tf.strings.split(d, os.path.sep)[-1].numpy()
-      label_dict[l] = label_id
+      label_dict[l.decode('UTF-8')] = label_id
       unique_labels.append(l)
       label_id += 1
       if (len(unique_labels) == NUM_CLASSES - 1):
@@ -60,7 +60,10 @@ def preprocess_dataset(path, image_size=(96, 96, 3)):
     print("Reading vggface2.lst")
     files = []
     for x in f.readlines():
-      files.append(x[0:-1])
+      file = x[0:-1]
+      if file.split(os.path.sep)[-2] in label_dict:
+        files.append(file)
+    ds_len = len(files)
     ds = tf.data.Dataset.from_tensor_slices(tf.convert_to_tensor(files, dtype=tf.string))
 
   except FileNotFoundError:
@@ -78,12 +81,6 @@ def preprocess_dataset(path, image_size=(96, 96, 3)):
 
   print("Preparing dataset...")
 
-  ds = ds.filter(lambda p: tf.py_function(
-    lambda path: tf.strings.split(path, os.path.sep)[-2].numpy() in label_dict,
-    [p],
-    tf.bool
-  ))
-  ds_len = len(list(ds))
   ds = ds.map(tf_process_path, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
   return ds_len, ds
